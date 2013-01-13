@@ -3,6 +3,7 @@ from DeployManager.models import *
 from django.contrib.auth import models as auth_app, get_user_model
 from django.contrib.auth.models import User
 from django.contrib.sites.models import Site
+from multiprocessing import Pool
 
 import fabfile
 
@@ -20,14 +21,22 @@ post_syncdb.connect(auto_create_superuser,
 
 def post_save_deployment(sender, instance, signal, *args, **kwargs):
 
-    import fabfile
+    from fabfile import launch_instance, configure_platform
     if instance.status_flags.configured != True:
-
-        fabfile.configure_platform(instance)
+        configure_platform(instance)
 
     if instance.status_flags.instance_launched != True:
+        launch_instance.delay(instance)
+        
 
-        fabfile.launch_instance(instance)
+def pre_delete_deployment(sender, instance, signal, *args, **kwargs):
+
+    import fabfile
+    fabfile.pre_delete_cleanup(instance)
+
+#def post_save_security_group(sender, instance, signal, *args, **kwargs):
+
+
 
 post_save.connect(post_save_deployment, sender=Deployment)
-
+pre_delete.connect(pre_delete_deployment, sender=Deployment)
