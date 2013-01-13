@@ -1,6 +1,7 @@
 from django.db import models 
 from DeployManager import settings
 from bitfield import BitField
+from AWSUtils import EC2Config
 
 
 deployment_services = (
@@ -31,7 +32,9 @@ class Client(models.Model):
     contact_email = models.EmailField()
     website = models.URLField(null=True, blank=True)
     client_since = models.DateField()
-   
+    aws_secret_key = models.CharField(max_length=200, blank=True, null=True)
+    aws_access_key_id = models.CharField(max_length=200, blank=True, null=True)
+  
 
 class Deployment(models.Model):
 
@@ -41,17 +44,23 @@ class Deployment(models.Model):
         else:
             super(Deployment, self).save(*args, **kwargs)
 
+    def _status(self):
+
+        if self.service == "ec2":
+            config = EC2Config(self)
+            return config.get_status()
+
+    status = property(_status)
+    
 
     client = models.ForeignKey('Client')
     date_launched = models.DateTimeField(blank=True, null=True)
     service = models.CharField(choices=deployment_services, max_length=200)
     current_app_version = models.CharField(max_length=200)
     app_location = models.CharField(max_length=200)
+    username = models.CharField(max_length=200)
     private_key = models.ForeignKey('KeyPair', blank=True, null=True)
     role = models.ForeignKey('ChefRole')
-    aws_secret_key = models.CharField(max_length=200, blank=True, null=True)
-    aws_access_key_id = models.CharField(max_length=200, blank=True, null=True)
-    aws_security_group_name = models.CharField(max_length=200, blank=True, null=True)
     ec2_instance_type = models.CharField(choices=ec2_instance_types, default="ec2", max_length=200)
     ec2_security_groups = models.ManyToManyField('Ec2SecurityGroup')
     ec2_ami = models.CharField(max_length=200)
@@ -62,6 +71,10 @@ class Deployment(models.Model):
 
 
 class Instance(models.Model):
+
+
+    def __unicode__(self):
+        return "%s - %s" % (self.instance_id, self.dns)
 
     dns = models.CharField(max_length=200)
     instance_id = models.CharField(max_length=200)
