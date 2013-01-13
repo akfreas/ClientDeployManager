@@ -1,5 +1,6 @@
 # Django settings for DeployManager project.
 
+
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
@@ -8,6 +9,7 @@ ADMINS = (
 )
 
 MANAGERS = ADMINS
+
 
 
 DATABASES = {
@@ -121,10 +123,16 @@ INSTALLED_APPS = (
     'south',
     'gunicorn',
     'DeployManager',
+    'djcelery',
+    'kombu.transport.django',
     # Uncomment the next line to enable the admin:
     # Uncomment the next line to enable admin documentation:
     # 'django.contrib.admindocs',
 )
+BROKER_URL = 'django://'
+import djcelery
+djcelery.setup_loader()
+
 
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to
@@ -139,12 +147,23 @@ LOGGING = {
             '()': 'django.utils.log.RequireDebugFalse'
         }
     },
+    'formatters': {
+        'standard': {
+            'format' : "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s",
+            'datefmt' : "%d/%b/%Y %H:%M:%S"
+        },
+    },
     'handlers': {
         'mail_admins': {
             'level': 'ERROR',
             'filters': ['require_debug_false'],
             'class': 'django.utils.log.AdminEmailHandler'
-        }
+        },
+        'testlog' : {
+            'level' : 'INFO',
+            'class' : 'DeployManager.streaming.LogStreamer',
+            'formatter' : 'standard',
+        },
     },
     'loggers': {
         'django.request': {
@@ -152,6 +171,10 @@ LOGGING = {
             'level': 'ERROR',
             'propagate': True,
         },
+        'DeployManager' : {
+            'handlers' : ['testlog'],
+            'level' : 'INFO',
+        }
     }
 }
 
