@@ -60,6 +60,7 @@ class Deployment(models.Model):
     app_location = models.CharField(max_length=200)
     username = models.CharField(max_length=200)
     private_key = models.ForeignKey('KeyPair', blank=True, null=True)
+    fabfile = models.FileField(upload_to=settings.FABFILE_ROOT)
     role = models.ForeignKey('ChefRole')
     ec2_instance_type = models.CharField(choices=ec2_instance_types, default="ec2", max_length=200)
     ec2_security_groups = models.ManyToManyField('Ec2SecurityGroup')

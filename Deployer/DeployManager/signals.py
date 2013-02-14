@@ -20,13 +20,15 @@ post_syncdb.connect(auto_create_superuser,
     sender=auth_app, dispatch_uid="django.contrib.auth.management.create_superuser")
 
 def post_save_deployment(sender, instance, signal, *args, **kwargs):
+    import sys
+    import traceback
+    exc_type, exc_value, exc_traceback = sys.exc_info()
 
     from fabfile import launch_instance, configure_platform
-    if instance.status_flags.configured != True:
+    if instance.status_flags.configured != True and instance.status_flags.instance_launched != True:
         configure_platform(instance)
-
-    if instance.status_flags.instance_launched != True:
         launch_instance.delay(instance)
+            
         
 
 def pre_delete_deployment(sender, instance, signal, *args, **kwargs):

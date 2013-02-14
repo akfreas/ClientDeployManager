@@ -19,6 +19,9 @@ class ClientAdmin(admin.ModelAdmin):
 
 admin.site.register(Client, ClientAdmin)
 
+class InstanceInline(admin.TabularInline):
+    model = Instance
+
 class DeploymentAdmin(admin.ModelAdmin):
 
     def deployment_status(self, obj):
@@ -29,6 +32,15 @@ class DeploymentAdmin(admin.ModelAdmin):
 
         return status
 
+    def install_app(self, obj):
+        return "<a href='/install_app/%s'>Install App</a>" % obj.id
+
+    install_app.allow_tags = True
+    def reinstall_app(self, obj):
+        return "<a href='/reinstall_app/%s'>Reinstall App</a>" % obj.id
+
+    reinstall_app.allow_tags = True
+    
     def save_model(self, request, obj, form, change):
         if obj.service == "ec2":
             config = EC2Config(obj)
@@ -36,14 +48,16 @@ class DeploymentAdmin(admin.ModelAdmin):
         super(DeploymentAdmin, self).save_model(request, obj, form, change)
 
     def knife_command(self, obj):
-        return fabfile.install_app(obj)
+        return "k"
+        #return fabfile.install_app(obj)
 
     formfield_overrides = {
         BitField: {'widget': BitFieldCheckboxSelectMultiple},
     }
-    list_display = ('date_launched', 'service', 'current_app_version', 'deployment_status')
-    readonly_fields = ('instances', 'date_launched', 'knife_command')
 
+
+    list_display = ('role','date_launched', 'service', 'current_app_version', 'deployment_status', 'install_app', 'reinstall_app')
+    readonly_fields = ('instances', 'date_launched', 'knife_command')
 
 admin.site.register(Deployment, DeploymentAdmin)
 
